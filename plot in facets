@@ -1,0 +1,31 @@
+subset_data_NNS_scaled$bdsspan_scaled <- as.numeric(subset_data_NNS_scaled$bdsspan_scaled)#set to numeric. othersie error occurs
+#name your model:
+best_modelNNS = glm(choose_psv ~ bdsspan_scaled + factor(headnoun) + factor(agent) , 
+                   data = subset_data_NNS_scaled, family = binomial(link = "logit"))
+summary (best_modelNNS)
+
+bdsspan_scaled_seq = seq(from = min(subset_data_NNS_scaled$bdsspan_scaled), 
+                         to = max(subset_data_NNS_scaled$bdsspan_scaled), length.out = 100)
+
+# Create new data for predictions with all combinations of agent and headnoun, i have 2 categorical variables "headnoun" and "agent", and a continuous variable "bdsspan_scaled". You should customize this according to your needs
+new_data = expand.grid(
+  headnoun = factor(c(0, 1)),
+  agent = factor(c(0, 1)),
+  bdsspan_scaled = bdsspan_scaled_seq
+)
+
+# Predict probabilities
+new_data$choose_psv_prob = predict(best_modelNNS, newdata = new_data, type = "response")
+
+#### plotting different facets ##############
+# Plot with facets for each agent value and lines for each headnoun value
+ggplot(new_data, aes(x = bdsspan_scaled, y = choose_psv_prob, color = factor(headnoun))) +
+  geom_line() +
+  facet_grid(~ agent) + # Create two panels for agent = 0 and agent = 1
+  scale_color_manual(values = c("blue", "red"), 
+                     labels = c("Headnoun = 0", "Headnoun = 1"), 
+                     name = "Headnoun") +
+  labs(x = "BDS Span (Scaled)", y = "Probability of Choosing Passive", color = "Headnoun") +
+  theme_minimal() +
+  ggtitle("Predicted Probability of Choosing Passive by BDS Span (Scaled) (Separated by Agent Animacy)")
+
